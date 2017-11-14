@@ -10,6 +10,7 @@ import com.google.common.collect.Maps;
 import com.google.common.collect.Ordering;
 
 import edu.miami.cse.reversi.strategy.*;
+import edu.miami.cse.reversi.strategy.Knotttv_Strategic_Tests.AlphaBeta;
 
 public class ReversiTournament {
 	/**
@@ -17,15 +18,16 @@ public class ReversiTournament {
 	 */
 	public static void main(String[] args) throws Exception {
 
-		int nGames = 1; 
-		long timeout = 10;
+		int nGames = 1;
+		long timeout = 1;
 		TimeUnit timeoutUnit = TimeUnit.SECONDS;
 
 		// List of the strategies in the tournament 
 		List<Strategy> strategies = Lists.newArrayList();
 
 		strategies.add(new RandomStrategy());
-		strategies.add(new Human());
+		strategies.add(new AlphaBeta());
+//		strategies.add(new Human());
 
 		// The number of wins of each strategy 
 		Map<Strategy, Integer> wins = Maps.newHashMap();
@@ -36,6 +38,9 @@ public class ReversiTournament {
 		// Run N rounds, pairing each strategy with each other strategy. There will
 		// actually be 2N games since each strategy gets to be both black and white
 		Board board = new Board();
+
+		/* The first thing we do is setting the start time. */
+        long startTime = System.currentTimeMillis();
 		for (int game = 0; game < nGames; ++game) {
 			for (int i = 0; i < strategies.size(); ++i) {
 				for (int j = i + 1; j < strategies.size(); ++j) {
@@ -43,6 +48,7 @@ public class ReversiTournament {
 					Strategy strategy2 = strategies.get(j);
 					Reversi reversi;
 					Strategy winner;
+
 
 					// first game: strategy1=BLACK, strategy2=WHITE
 					reversi = new Reversi(strategy1, strategy2, timeout, timeoutUnit);
@@ -55,6 +61,7 @@ public class ReversiTournament {
 					if (winner != null) {
 						wins.put(winner, wins.get(winner) + 1);
 					}
+
 
 					// second game: strategy2=BLACK, strategy1=WHITE
 					reversi = new Reversi(strategy2, strategy1, timeout, timeoutUnit);
@@ -70,11 +77,17 @@ public class ReversiTournament {
 			}
 		}
 
+		/* The first thing we do is setting the start time. */
+        long endTime = System.currentTimeMillis();
+
+
 		// rank strategies by number of wins
 		Ordering<Strategy> byWins = Ordering.natural().onResultOf(Functions.forMap(wins)).reverse();
 		for (Strategy strategy : byWins.sortedCopy(wins.keySet())) {
 			System.out.printf("%4d\t%s\n", wins.get(strategy), strategy.getClass().getName());
 		}
+
+		System.out.println("Total Time: " + (endTime - startTime) + " Miliseconds");
 	}
 
 
