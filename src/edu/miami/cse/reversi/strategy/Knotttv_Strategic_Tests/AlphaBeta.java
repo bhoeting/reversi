@@ -10,11 +10,9 @@ public class AlphaBeta implements Strategy {
 
     private final long MAX_TIME = 1000;
     private long startTime;
+    private int nodeCutoff = 0;
+    private int epthCutoff = 0;
 
-    private int intelligentDepth(int possibleMovesBranchingFactor){
-        int depth = (int)Math.floor(Math.log(500) / Math.log(possibleMovesBranchingFactor));
-        return  possibleMovesBranchingFactor > 10 ? 3 : depth;
-    }
 
     @Override
     public Square chooseSquare(Board board) {
@@ -24,6 +22,7 @@ public class AlphaBeta implements Strategy {
 
         Board initialBoard;
         int allowedDepth = 3;
+//        int allowedNodes = 20;
         int alpha = -999;
         int beta = 999;
         boolean wantToMaximize = false;
@@ -40,23 +39,33 @@ public class AlphaBeta implements Strategy {
         }
 
 
-        Object[] possibileMoves = initialBoard.getCurrentPossibleSquares().toArray();
+        //Send to brendan
+//        Object[] possibileMoves = Heuristics.orderMoves(board, initialBoard.getCurrentPossibleSquares().toArray());
+
+        Object[] possibileMoves = board.getCurrentPossibleSquares().toArray();
 
         //Start with an arbitrary move, in the future we will do an intelligent move selection
         //send wantToMaximize as false to start because the immediate proceeding recursive call will be a minimization
+
         optimalMove = (Square)possibileMoves[new Random().nextInt(possibileMoves.length)];
 
-//        allowedDepth = intelligentDepth(possibileMoves.size());
+//        optimalMove = (Square)possibileMoves[0];
 
         int currentUtilityScore = a_b_Pruning(initialBoard.play(optimalMove),
                 alpha,
                 beta,
                 allowedDepth,
+                allowedNodes--,
                 !wantToMaximize);
 
         for( int i = 0; i < possibileMoves.length; i++){
             if (alpha >= beta || initialBoard.isComplete()) break;
-            if(MAX_TIME - (System.currentTimeMillis() - startTime) < MAX_TIME - 100) return (Square)possibileMoves[new Random().nextInt(possibileMoves.length)];
+
+            if(MAX_TIME - (System.currentTimeMillis() - startTime) < MAX_TIME - 100){
+                System.out.println("Ran Out of Time");
+                return optimalMove;
+                }
+
 
             //update aplha/beta based on the currentUtilityScore
             if (wantToMaximize){
@@ -70,6 +79,7 @@ public class AlphaBeta implements Strategy {
                     alpha,
                     beta,
                     allowedDepth,
+                    allowedNodes--,
                     !wantToMaximize);
 
 
@@ -93,26 +103,44 @@ public class AlphaBeta implements Strategy {
 
         }
 
+//        System.out.println("Node Cutoff: " + nodeCutoff + " Depth Cutoff: " + depthCutoff);
+
         return optimalMove;
     }
 
-    private int a_b_Pruning(Board instanceBoard, int alpha, int beta, int allowedDepth, boolean wantToMaximize) {
+    private int a_b_Pruning(Board instanceBoard, int alpha, int beta, int allowedDepth, int allowedNodes, boolean wantToMaximize) {
 
         //returns the score at the end of this recursive branch, to be compared to the other scores, higher is better for us
         // we want to maximize the score
-        if (allowedDepth <= 0 || instanceBoard.isComplete()) {
+//        if (allowedDepth <= 0) {
+//            depthCutoff++;
+//            return Math.abs(instanceBoard.getPlayerSquareCounts().get(instanceBoard.getCurrentPlayer()) -
+//                    instanceBoard.getPlayerSquareCounts().get(instanceBoard.getCurrentPlayer().opponent()));
+//        }
+
+        if(instanceBoard.isComplete()){
+            return Math.abs(instanceBoard.getPlayerSquareCounts().get(instanceBoard.getCurrentPlayer()) -
+                    instanceBoard.getPlayerSquareCounts().get(instanceBoard.getCurrentPlayer().opponent()));
+        }
+
+        if(allowedNodes <= 0) {
+            nodeCutoff++;
             return Math.abs(instanceBoard.getPlayerSquareCounts().get(instanceBoard.getCurrentPlayer()) -
                     instanceBoard.getPlayerSquareCounts().get(instanceBoard.getCurrentPlayer().opponent()));
         }
 
         allowedDepth--;
+
+        //Send to brendan
         Object[] instancePossibileMoves = instanceBoard.getCurrentPossibleSquares().toArray();
+
         //No Possible Moves, Pass
         if(instancePossibileMoves.length == 0){
             return a_b_Pruning(instanceBoard.pass(),
                     alpha,
                     beta,
                     allowedDepth,
+                    allowedNodes--,
                     !wantToMaximize);
         }
 
@@ -125,6 +153,7 @@ public class AlphaBeta implements Strategy {
                     alpha,
                     beta,
                     allowedDepth,
+                    allowedNodes--,
                     !wantToMaximize);
             if (wantToMaximize) {
                 optimalUtility = optimalUtility > proceedingUtilityInstanceScore ? optimalUtility : proceedingUtilityInstanceScore;

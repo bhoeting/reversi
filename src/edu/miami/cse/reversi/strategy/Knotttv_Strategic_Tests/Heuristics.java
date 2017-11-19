@@ -10,44 +10,39 @@ import edu.miami.cse.reversi.Square;
 public class Heuristics {
 
 	// Returns best move from array of moves
-	public Move getBestMove(Board board, SmartMove[] possibleMoves) {
-		orderMoves(board, possibleMoves);
-
-		return possibleMoves[0];
-	}
 
 	// Orders an array of "SmartMoves" from highest heuristic value to lowest
-	public SmartMove[] orderMoves(Board board, SmartMove[] possibleMoves) {
+	static public Object[] orderMoves(Board board, Object[] possibleMoves) {
 		for (int i = 0; 0 < possibleMoves.length; i++)
-			calculateHeuristics(board, possibleMoves[i]);
+			calculateHeuristics(board, (SmartSquare)possibleMoves[i]);
 		Arrays.sort(possibleMoves);
 		return possibleMoves;
 	}
 
 	// Calculates heuristic for given move
-	public void calculateHeuristics(Board board, SmartMove move) {
-		Player player = move.getPlayer();
+	public static void calculateHeuristics(Board board, SmartSquare square) {
 		Board tempBoard = board;
+		Player user = board.getCurrentPlayer();
 		
 		//Counts totals before you make a move
-		int old2x2 = getCenter2x2Count(tempBoard, player);
-		int old4x4 = getCenter4x4Count(tempBoard, player);
-		int oldEdges = getEdgeCount(tempBoard, player);
-		int oldCorners = getCornerCount(tempBoard, player);
+		int old2x2 = getCenter2x2Count(tempBoard, user);
+		int old4x4 = getCenter4x4Count(tempBoard, user);
+		int oldEdges = getEdgeCount(tempBoard, user);
+		int oldCorners = getCornerCount(tempBoard, user);
 		
-		tempBoard.play(move.getSquare());
+		tempBoard.play(square);
 		
 		//Counts totals after you make a move
-		int middleSquareCount = getCenter2x2Count(tempBoard, player) - old2x2;
-		int outerSquareCount = getCenter4x4Count(tempBoard, player) - old4x4;
-		int edgeCount = getEdgeCount(tempBoard, player) - oldEdges;
-		int cornerCount = getCornerCount(tempBoard, player) - oldCorners;
+		int middleSquareCount = getCenter2x2Count(tempBoard, user) - old2x2;
+		int outerSquareCount = getCenter4x4Count(tempBoard, user) - old4x4;
+		int edgeCount = getEdgeCount(tempBoard, user) - oldEdges;
+		int cornerCount = getCornerCount(tempBoard, user) - oldCorners;
 
 		//
-		move.updateHeuristic(middleSquareCount * 1);
-		move.updateHeuristic(outerSquareCount * 1);
-		move.updateHeuristic(edgeCount * 5);
-		move.updateHeuristic(cornerCount * 10);
+		square.updateHeuristic(middleSquareCount * 1);
+		square.updateHeuristic(outerSquareCount * 1);
+		square.updateHeuristic(edgeCount * 5);
+		square.updateHeuristic(cornerCount * 10);
 
 		// if (relinquishesCenter2x2(tempBoard, player))
 		// heuristic -= 1;
@@ -73,7 +68,7 @@ public class Heuristics {
 	}
 
 	// Returns number of inner square (2x2) tiles obtained
-	public int getCenter2x2Count(Board board, Player user) {
+	public static int getCenter2x2Count(Board board, Player user) {
 		int count = 0;
 		if (board.getSquareOwners().get(new Square(3, 3)).equals(user))
 			count++;
@@ -87,7 +82,7 @@ public class Heuristics {
 	}
 
 	// Returns number of outer square (4x4) tiles obtained
-	public int getCenter4x4Count(Board board, Player user) {
+	public static int getCenter4x4Count(Board board, Player user) {
 		int count = 0;
 		for (int i = 2; i <= 5; i++) {
 			for (int j = 2; j <= 5; j++) {
@@ -100,7 +95,7 @@ public class Heuristics {
 	}
 
 	// Returns number of edges obtained
-	public int getEdgeCount(Board board, Player user) {
+	public static int getEdgeCount(Board board, Player user) {
 		int count = 0;
 		for (int i = 1; i <= 6; i++) {
 			if (board.getSquareOwners().get(new Square(i, 0)).equals(user))
@@ -119,7 +114,7 @@ public class Heuristics {
 	}
 
 	// Returns number of corners obtained
-	public int getCornerCount(Board board, Player user) {
+	public static int getCornerCount(Board board, Player user) {
 		int count = 0;
 		if (board.getSquareOwners().get(new Square(0, 0)).equals(user))
 			count++;
@@ -134,12 +129,12 @@ public class Heuristics {
 	}
 
 	// Extension of Move class
-	private class SmartMove extends Move implements Comparable {
+	private class SmartSquare extends Square implements Comparable {
 		int heuristic;
 
-		public SmartMove(Square square, Player player) {
-			super(square, player);
-			heuristic = 0;
+		public SmartSquare(int row, int column) {
+			super(row, column);
+			this.heuristic = 0;
 		}
 
 		public void updateHeuristic(int value) {
@@ -148,7 +143,7 @@ public class Heuristics {
 
 		@Override
 		public int compareTo(Object o) {
-			SmartMove other = (SmartMove) o;
+			SmartSquare other = (SmartSquare) o;
 			if (this.heuristic > other.heuristic)
 				return 1;
 			if (this.heuristic < other.heuristic)
