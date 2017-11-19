@@ -9,14 +9,14 @@ import edu.miami.cse.reversi.Square;
 
 public class Heuristics {
 
-	//Returns best move from array of moves
+	// Returns best move from array of moves
 	public Move getBestMove(Board board, SmartMove[] possibleMoves) {
 		orderMoves(board, possibleMoves);
-		
+
 		return possibleMoves[0];
 	}
-	
-	//Orders an array of "SmartMoves" from highest heuristic value to lowest
+
+	// Orders an array of "SmartMoves" from highest heuristic value to lowest
 	public SmartMove[] orderMoves(Board board, SmartMove[] possibleMoves) {
 		for (int i = 0; 0 < possibleMoves.length; i++)
 			calculateHeuristics(board, possibleMoves[i]);
@@ -24,125 +24,116 @@ public class Heuristics {
 		return possibleMoves;
 	}
 
-	//Calculates heuristic for given move
+	// Calculates heuristic for given move
 	public void calculateHeuristics(Board board, SmartMove move) {
 		Player player = move.getPlayer();
 		Board tempBoard = board;
-		board.play(move.getSquare());
+		
+		//Counts totals before you make a move
+		int old2x2 = getCenter2x2Count(tempBoard, player);
+		int old4x4 = getCenter4x4Count(tempBoard, player);
+		int oldEdges = getEdgeCount(tempBoard, player);
+		int oldCorners = getCornerCount(tempBoard, player);
+		
+		tempBoard.play(move.getSquare());
+		
+		//Counts totals after you make a move
+		int middleSquareCount = getCenter2x2Count(tempBoard, player) - old2x2;
+		int outerSquareCount = getCenter4x4Count(tempBoard, player) - old4x4;
+		int edgeCount = getEdgeCount(tempBoard, player) - oldEdges;
+		int cornerCount = getCornerCount(tempBoard, player) - oldCorners;
 
-		if (obtainsCenter2x2(tempBoard, player))
-			move.updateHeuristic(1);
-		;
-		if (obtainsCenter4x4(tempBoard, player))
-			move.updateHeuristic(2);
-		;
-		if (obtainsEdge(tempBoard, player))
-			move.updateHeuristic(5);
-		;
-		if (obtainsCorner(tempBoard, player))
-			move.updateHeuristic(10);
-		;
+		//
+		move.updateHeuristic(middleSquareCount * 1);
+		move.updateHeuristic(outerSquareCount * 1);
+		move.updateHeuristic(edgeCount * 5);
+		move.updateHeuristic(cornerCount * 10);
 
-//		if (relinquishesCenter2x2(tempBoard, player))
-//			heuristic -= 1;
-//		if (relinquishesCenter4x4(tempBoard, player))
-//			heuristic -= 2;
-//		if (relinquishesEdge(tempBoard, player))
-//			heuristic -= 5;
-//		if (relinquishesCorner(tempBoard, player))
-//			heuristic -= 10;
+		// if (relinquishesCenter2x2(tempBoard, player))
+		// heuristic -= 1;
+		// if (relinquishesCenter4x4(tempBoard, player))
+		// heuristic -= 2;
+		// if (relinquishesEdge(tempBoard, player))
+		// heuristic -= 5;
+		// if (relinquishesCorner(tempBoard, player))
+		// heuristic -= 10;
 
 		return;
 
 	}
 
-	//Early in the game
+	// Early in the game
 	public boolean isEarly(Board board) {
 		return board.getMoves().size() < 20;
 	}
 
-	//Late in the game
+	// Late in the game
 	public boolean isLate(Board board) {
 		return board.getMoves().size() > 40;
 	}
 
-	//Returns if player currently owns a tile in the center 4 of the board
-	public boolean obtainsCenter2x2(Board board, Player user) {
-		if (board.getSquareOwners().get(new Square(3, 3)).equals(user)
-				|| board.getSquareOwners().get(new Square(3, 4)).equals(user)
-				|| board.getSquareOwners().get(new Square(4, 3)).equals(user)
-				|| board.getSquareOwners().get(new Square(4, 4)).equals(user))
-			return true;
-		return false;
+	// Returns number of inner square (2x2) tiles obtained
+	public int getCenter2x2Count(Board board, Player user) {
+		int count = 0;
+		if (board.getSquareOwners().get(new Square(3, 3)).equals(user))
+			count++;
+		if (board.getSquareOwners().get(new Square(3, 4)).equals(user))
+			count++;
+		if (board.getSquareOwners().get(new Square(4, 3)).equals(user))
+			count++;
+		if (board.getSquareOwners().get(new Square(4, 4)).equals(user))
+			count++;
+		return count;
 	}
 
-	//Returns if player currently owns a tile in the center 8 of the board
-	public boolean obtainsCenter4x4(Board board, Player user) {
-		if (board.getSquareOwners().get(new Square(2, 2)).equals(user)
-				|| board.getSquareOwners().get(new Square(2, 3)).equals(user)
-				|| board.getSquareOwners().get(new Square(2, 4)).equals(user)
-				|| board.getSquareOwners().get(new Square(2, 5)).equals(user)
-				|| board.getSquareOwners().get(new Square(3, 2)).equals(user)
-				|| board.getSquareOwners().get(new Square(3, 3)).equals(user)
-				|| board.getSquareOwners().get(new Square(3, 4)).equals(user)
-				|| board.getSquareOwners().get(new Square(3, 5)).equals(user)
-				|| board.getSquareOwners().get(new Square(4, 2)).equals(user)
-				|| board.getSquareOwners().get(new Square(4, 3)).equals(user)
-				|| board.getSquareOwners().get(new Square(4, 4)).equals(user)
-				|| board.getSquareOwners().get(new Square(4, 5)).equals(user)
-				|| board.getSquareOwners().get(new Square(5, 2)).equals(user)
-				|| board.getSquareOwners().get(new Square(5, 3)).equals(user)
-				|| board.getSquareOwners().get(new Square(5, 4)).equals(user)
-				|| board.getSquareOwners().get(new Square(5, 5)).equals(user))
-			return true;
-		return false;
+	// Returns number of outer square (4x4) tiles obtained
+	public int getCenter4x4Count(Board board, Player user) {
+		int count = 0;
+		for (int i = 2; i <= 5; i++) {
+			for (int j = 2; j <= 5; j++) {
+				if (board.getSquareOwners().get(new Square(i, j)).equals(user))
+					count++;
+			}
+		}
+
+		return count;
 	}
 
-	//If player currently owns a tile on the edge
-	public boolean obtainsEdge(Board board, Player user) {
-		if (board.getSquareOwners().get(new Square(0, 0)).equals(user)
-				|| board.getSquareOwners().get(new Square(0, 1)).equals(user)
-				|| board.getSquareOwners().get(new Square(0, 2)).equals(user)
-				|| board.getSquareOwners().get(new Square(0, 3)).equals(user)
-				|| board.getSquareOwners().get(new Square(0, 4)).equals(user)
-				|| board.getSquareOwners().get(new Square(0, 5)).equals(user)
-				|| board.getSquareOwners().get(new Square(0, 6)).equals(user)
-				|| board.getSquareOwners().get(new Square(0, 7)).equals(user)
-				|| board.getSquareOwners().get(new Square(1, 7)).equals(user)
-				|| board.getSquareOwners().get(new Square(2, 7)).equals(user)
-				|| board.getSquareOwners().get(new Square(3, 7)).equals(user)
-				|| board.getSquareOwners().get(new Square(4, 7)).equals(user)
-				|| board.getSquareOwners().get(new Square(5, 7)).equals(user)
-				|| board.getSquareOwners().get(new Square(6, 7)).equals(user)
-				|| board.getSquareOwners().get(new Square(7, 7)).equals(user)
-				|| board.getSquareOwners().get(new Square(7, 6)).equals(user)
-				|| board.getSquareOwners().get(new Square(7, 5)).equals(user)
-				|| board.getSquareOwners().get(new Square(7, 4)).equals(user)
-				|| board.getSquareOwners().get(new Square(7, 3)).equals(user)
-				|| board.getSquareOwners().get(new Square(7, 2)).equals(user)
-				|| board.getSquareOwners().get(new Square(7, 1)).equals(user)
-				|| board.getSquareOwners().get(new Square(7, 0)).equals(user)
-				|| board.getSquareOwners().get(new Square(6, 0)).equals(user)
-				|| board.getSquareOwners().get(new Square(5, 0)).equals(user)
-				|| board.getSquareOwners().get(new Square(4, 0)).equals(user)
-				|| board.getSquareOwners().get(new Square(3, 0)).equals(user)
-				|| board.getSquareOwners().get(new Square(2, 0)).equals(user)
-				|| board.getSquareOwners().get(new Square(1, 0)).equals(user))
-			return true;
-		return false;
+	// Returns number of edges obtained
+	public int getEdgeCount(Board board, Player user) {
+		int count = 0;
+		for (int i = 1; i <= 6; i++) {
+			if (board.getSquareOwners().get(new Square(i, 0)).equals(user))
+				count++;
+			if (board.getSquareOwners().get(new Square(0, i)).equals(user))
+				count++;
+		}
+		for (int i = 1; i <= 6; i++) {
+			if (board.getSquareOwners().get(new Square(i, 7)).equals(user))
+				count++;
+			if (board.getSquareOwners().get(new Square(7, i)).equals(user))
+				count++;
+		}
+
+		return count;
 	}
 
-	//Returns if player currently owns tile in the corner
-	public boolean obtainsCorner(Board board, Player user) {
-		if (board.getSquareOwners().get(new Square(0, 0)).equals(user)
-				|| board.getSquareOwners().get(new Square(0, 7)).equals(user)
-				|| board.getSquareOwners().get(new Square(7, 0)).equals(user)
-				|| board.getSquareOwners().get(new Square(7, 7)).equals(user))
-			return true;
-		return false;
+	// Returns number of corners obtained
+	public int getCornerCount(Board board, Player user) {
+		int count = 0;
+		if (board.getSquareOwners().get(new Square(0, 0)).equals(user))
+			count++;
+		if (board.getSquareOwners().get(new Square(0, 7)).equals(user))
+			count++;
+		if (board.getSquareOwners().get(new Square(7, 0)).equals(user))
+			count++;
+		if (board.getSquareOwners().get(new Square(7, 7)).equals(user))
+			count++;
+
+		return count;
 	}
 
-	//Extention of class Move 
+	// Extension of Move class
 	private class SmartMove extends Move implements Comparable {
 		int heuristic;
 
@@ -164,7 +155,6 @@ public class Heuristics {
 				return -1;
 			return 0;
 		}
-
 
 	}
 
